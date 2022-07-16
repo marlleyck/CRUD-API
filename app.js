@@ -5,12 +5,25 @@ const openModal = () => {
 
 const closeModal = () => {
     clearValues()
+    retorna_original('http://127.0.0.1:5500/index.html')
     const modal = document.querySelector('.modal')
     modal.classList.remove('active')
 }
 
 const url = 'http://localhost:5500/api'
 
+// URL
+
+function alterar_url(nova){
+    history.pushState({}, null, nova);
+}
+
+
+function retorna_original(url){
+    history.back();
+}
+
+const urlParams = () => new URLSearchParams(window.location.search)
 
 
 
@@ -91,13 +104,19 @@ const saveClient = () => {
                 number: document.getElementById('numero').value,
                 city: document.getElementById('cidade').value
             }
+
             const set = document.getElementById('nome').dataset.new
+
+            let urlID = window.location.href;
+            urlID = urlID.split('http://127.0.0.1:5500/') ;
+            urlID = urlID[1];
+            
             if (set === 'new') {
                 postUser(client)
                 updateTable()
                 closeModal()
-            } else {
-                putClient(client, set+1)
+            } else {        
+                putClient(client, urlID)
                 updateTable()
                 closeModal()
             }
@@ -110,11 +129,18 @@ const saveClient = () => {
 
 // EDIT AND DELETE 
 
+
 const deleteClient = (index) => {
+
+    let urlID = window.location.href;
+    urlID = urlID.split('http://127.0.0.1:5500/') ;
+    urlID = urlID[1];
+
     const response = confirm('Deseja realmente excluir o usuário?')
+
     if (response) {
-        axios.delete(`${url}/${index+1}`)
-        .then(response => alert('Usuário deletado!'))
+        axios.delete(`${url}/${urlID}`)
+        .then(response => {retorna_original('http://127.0.0.1:5500/index.html')})
         .catch(err => console.log(err))
     }
 }
@@ -126,12 +152,14 @@ const fillFields = (user) => {
     document.getElementById('cidade').value = user.city
 }
 
+
 const editClient = (index) => {
     document.getElementById('nome').dataset.new = index
     axios.get(url)
     .then(response => {
         const data = response.data.users
         const user = data[index]
+        alterar_url(`http://127.0.0.1:5500/${user.id}`)
         fillFields(user)
         openModal()
     })
@@ -144,10 +172,16 @@ const editDelete = (event) => {
     
     if (id === 'editar') {
         editClient(index)
-    } else if (id === 'excluir') {
-        deleteClient(index)
-        console.log(index)
-        updateTable()
+    } else if (id === 'excluir') { 
+        axios.get(url)
+        .then(response => {
+            const data = response.data.users
+            const user = data[index]
+            alterar_url(`http://127.0.0.1:5500/${user.id}`)
+            deleteClient(index)
+            updateTable()
+        })
+        .catch(err => console.log(err))
     }
 }
 
